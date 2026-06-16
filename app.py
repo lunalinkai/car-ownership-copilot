@@ -42,7 +42,10 @@ with st.sidebar:
     key = os.getenv("OPENAI_API_KEY")
     if not key:
         key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
-        st.caption("Used only for this session — never stored or logged. Runs on `gpt-4o-mini` (a few cents).")
+        st.caption(
+            "Bring your own key — used only for your session, never stored or logged. "
+            "Runs on `gpt-4o-mini` (a few cents). [Get a key ↗](https://platform.openai.com/api-keys)"
+        )
         if key:
             os.environ["OPENAI_API_KEY"] = key
 
@@ -65,7 +68,39 @@ if "turns" not in st.session_state:
     st.session_state.turns = []
 
 if not os.getenv("OPENAI_API_KEY"):
-    st.info("👈 Enter your OpenAI API key in the sidebar to start.")
+    st.info(
+        "👈 **Live demo — bring your own OpenAI key.** Paste a key in the sidebar to start "
+        "chatting. It's used only for your session and never stored. Here's what it does:"
+    )
+    st.markdown("#### How it works")
+    st.markdown(
+        "A **supervisor agent** reads your question and routes it to the right tool-using "
+        "specialist — insurance, maintenance, recalls, or repair cost — which answers from "
+        "(mock) internal-API tools. Off-topic questions hit a guardrail."
+    )
+    try:
+        st.image(
+            "architecture.png",
+            caption="Supervisor routes each request to a specialist agent (auto-generated from the LangGraph).",
+        )
+    except Exception:
+        pass
+
+    st.markdown("#### Example exchange")
+    with st.chat_message("user"):
+        st.markdown("Are there any open recalls on a 2019 Honda Civic?")
+    with st.chat_message("assistant"):
+        st.markdown(
+            "Yes — there's **1 open recall** on a 2019 Honda Civic:\n\n"
+            "- **19V-001 — Fuel pump:** may fail and cause an engine stall.\n"
+            "- **Fix (free):** the dealer replaces the fuel pump.\n\n"
+            "I'd schedule the repair soon."
+        )
+        st.caption("⚠️ Recall · routed by the supervisor · ~3.6s")
+
+    st.markdown(
+        "[View the source on GitHub →](https://github.com/lunalinkai/car-ownership-copilot)"
+    )
     st.stop()
 
 
