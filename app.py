@@ -43,10 +43,12 @@ with st.sidebar:
     user_key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
     st.caption(
         "Bring your own key — used only for your session, never stored or logged. "
-        "Runs on `gpt-4o-mini` (a few cents). [Get a key ↗](https://platform.openai.com/api-keys)"
+        f"Runs on `{DEFAULT_MODEL}` (a few cents). [Get a key ↗](https://platform.openai.com/api-keys)"
     )
 
-    model = st.selectbox("Model", list(MODEL_PRICING.keys()), index=0)
+    _models = list(MODEL_PRICING.keys())
+    _default_idx = _models.index(DEFAULT_MODEL) if DEFAULT_MODEL in _models else 0
+    model = st.selectbox("Model", _models, index=_default_idx)
     st.caption(f"Default: {DEFAULT_MODEL} — chosen for low latency & cost.")
 
     st.markdown("**Try an example:**")

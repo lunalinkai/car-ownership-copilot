@@ -32,20 +32,20 @@ I built this as a working illustration of the patterns behind an AI platform tha
 |---|---|
 | *"LLMs, agents, and internal APIs to automate…"* | Supervisor + 4 specialist agents, each calling typed mock tools (`car_copilot/tools.py`) that stand in for Jerry's quoting / scheduling / recall / pricing services. |
 | *"design prompt strategies, evaluation frameworks, and guardrails"* | Structured-output router, an `out_of_scope` **guardrail** that answers with no LLM call, and a routing-accuracy **eval** (`evals/`) that exits non-zero below 85% so it can gate CI. |
-| *"balancing latency, cost, and accuracy"* | Every turn reports route, **latency (ms)**, **token count**, and an **estimated $ cost**; default model is `gpt-4o-mini` for speed/cost. |
+| *"balancing latency, cost, and accuracy"* | Every turn reports route, **latency (ms)**, **token count**, and an **estimated $ cost**; default model is `gpt-5.4-mini` for speed/cost, with `gpt-5.5` selectable for harder reasoning. |
 | *"human-in-the-loop feedback"* | `book_service_appointment` only fires after the user explicitly confirms the service and date. |
 
-## Verified (live run, `gpt-4o-mini`)
+## Verified (live run, `gpt-5.4-mini`)
 
 Routing eval: **14/14 = 100%** (`python -m evals.run_eval`). End-to-end behavior, with the per-turn metrics the system reports:
 
 | Scenario | Route | Behavior | Latency | Cost |
 |---|---|---|---|---|
-| "Insurance for my 2019 Civic, ZIP 94107, age 23" | `insurance` | Called the quote tool → 3 carrier quotes | ~4.0 s | $0.00027 |
-| "Any recalls on a 2019 Honda Civic?" | `recall` | Found campaign 19V-001 (fuel pump) | ~3.6 s | $0.00025 |
-| "Brake pads on a BMW 3 Series?" | `cost` | $210–$420 (luxury markup applied) | ~2.9 s | $0.00021 |
-| "Book an oil change for my RAV4" → "Yes" | `maintenance` | Asked to confirm first, **then** booked (JRY-…) | ~3.2 / 3.6 s | $0.00027 |
-| "What's the weather in Paris?" | `out_of_scope` | Guardrail reply, no specialist call | ~0.8 s | $0.00006 |
+| "Insurance for my 2019 Civic, ZIP 94107, age 23" | `insurance` | Called the quote tool → 3 carrier quotes | ~3.0 s | $0.0015 |
+| "Any recalls on a 2019 Honda Civic?" | `recall` | Found campaign 19V-001 (fuel pump) | ~2.3 s | $0.0013 |
+| "Brake pads on a BMW 3 Series?" | `cost` | $210–$420 (luxury markup applied) | ~2.2 s | $0.0012 |
+| "Book an oil change for my RAV4" → "Yes" | `maintenance` | Asked to confirm first, **then** booked (JRY-…) | ~3.3 / 2.1 s | $0.0016 / $0.0015 |
+| "What's the weather in Paris?" | `out_of_scope` | Guardrail reply, no specialist call | ~0.8 s | $0.0003 |
 
 *Mock data only — no real quotes, bookings, or recall lookups are performed.*
 
@@ -95,7 +95,7 @@ smoke_test.py   offline structural test (no API key)
 
 ## How it works
 
-1. **Route.** The supervisor (`gpt-4o-mini`, `temperature=0`, structured output) reads the whole conversation and returns one of six destinations.
+1. **Route.** The supervisor (`gpt-5.4-mini`, `temperature=0`, structured output) reads the whole conversation and returns one of six destinations.
 2. **Specialize.** The chosen specialist runs a bounded tool-calling loop: decide → call tool → read result → answer. Only the final answer is written to shared state, so intermediate tool chatter never pollutes context.
 3. **Guard.** Off-topic requests short-circuit to a static reply — no model call, so it's instant and free.
 4. **Measure.** A callback accumulates token usage across every LLM call in the turn; cost is derived from a per-model price table.
