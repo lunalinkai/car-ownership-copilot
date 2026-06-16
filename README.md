@@ -4,6 +4,8 @@ A small but production-shaped **multi-agent system** built with **LangGraph** an
 
 I built this as a working illustration of the patterns behind an AI platform that automates car-ownership sales & service: routing, tool/function calling, a safety guardrail, human-in-the-loop confirmation, and per-turn latency/cost/accuracy instrumentation.
 
+**🔗 Live demo:** _deploying to Streamlit Community Cloud — see [DEPLOY.md](DEPLOY.md)_ &nbsp;·&nbsp; bring your own OpenAI key (paste in the sidebar; never stored).
+
 ![Architecture](architecture.png)
 
 *Auto-generated from the compiled LangGraph (`build_graph().get_graph().draw_mermaid_png()`).*

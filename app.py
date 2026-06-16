@@ -42,6 +42,7 @@ with st.sidebar:
     key = os.getenv("OPENAI_API_KEY")
     if not key:
         key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
+        st.caption("Used only for this session — never stored or logged. Runs on `gpt-4o-mini` (a few cents).")
         if key:
             os.environ["OPENAI_API_KEY"] = key
 
