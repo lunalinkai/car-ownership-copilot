@@ -33,6 +33,20 @@ I built this as a working illustration of the patterns behind an AI platform tha
 | *"balancing latency, cost, and accuracy"* | Every turn reports route, **latency (ms)**, **token count**, and an **estimated $ cost**; default model is `gpt-4o-mini` for speed/cost. |
 | *"human-in-the-loop feedback"* | `book_service_appointment` only fires after the user explicitly confirms the service and date. |
 
+## Verified (live run, `gpt-4o-mini`)
+
+Routing eval: **14/14 = 100%** (`python -m evals.run_eval`). End-to-end behavior, with the per-turn metrics the system reports:
+
+| Scenario | Route | Behavior | Latency | Cost |
+|---|---|---|---|---|
+| "Insurance for my 2019 Civic, ZIP 94107, age 23" | `insurance` | Called the quote tool → 3 carrier quotes | ~4.0 s | $0.00027 |
+| "Any recalls on a 2019 Honda Civic?" | `recall` | Found campaign 19V-001 (fuel pump) | ~3.6 s | $0.00025 |
+| "Brake pads on a BMW 3 Series?" | `cost` | $210–$420 (luxury markup applied) | ~2.9 s | $0.00021 |
+| "Book an oil change for my RAV4" → "Yes" | `maintenance` | Asked to confirm first, **then** booked (JRY-…) | ~3.2 / 3.6 s | $0.00027 |
+| "What's the weather in Paris?" | `out_of_scope` | Guardrail reply, no specialist call | ~0.8 s | $0.00006 |
+
+*Mock data only — no real quotes, bookings, or recall lookups are performed.*
+
 ## Quickstart
 
 ```bash
