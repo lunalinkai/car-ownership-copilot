@@ -73,13 +73,15 @@ SPECIALISTS = {
 }
 
 
-def run_specialist(name: str, history: list, model: Optional[str] = None) -> AIMessage:
+def run_specialist(
+    name: str, history: list, model: Optional[str] = None, api_key: Optional[str] = None
+) -> AIMessage:
     """Run one specialist over the conversation and return its final answer."""
     spec = SPECIALISTS[name]
     tools = spec["tools"]
     tools_by_name = {t.name: t for t in tools}
 
-    llm = get_llm(model=model)
+    llm = get_llm(model=model, api_key=api_key)
     if tools:
         llm = llm.bind_tools(tools)
 
@@ -103,7 +105,7 @@ def run_specialist(name: str, history: list, model: Optional[str] = None) -> AIM
             convo.append(ToolMessage(content=str(result), tool_call_id=call["id"]))
 
     # Hit the step cap — force one final, tool-free answer.
-    final = get_llm(model=model).invoke(
+    final = get_llm(model=model, api_key=api_key).invoke(
         convo + [SystemMessage(content="Summarize your best answer for the user now, without tools.")]
     )
     return AIMessage(content=final.content or "I wasn't able to complete that request.")

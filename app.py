@@ -5,8 +5,6 @@ Run with:  streamlit run app.py
 
 from __future__ import annotations
 
-import os
-
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -39,15 +37,14 @@ with st.sidebar:
         "tool-using specialist (insurance · maintenance · recalls · repair cost)."
     )
 
-    key = os.getenv("OPENAI_API_KEY")
-    if not key:
-        key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
-        st.caption(
-            "Bring your own key — used only for your session, never stored or logged. "
-            "Runs on `gpt-4o-mini` (a few cents). [Get a key ↗](https://platform.openai.com/api-keys)"
-        )
-        if key:
-            os.environ["OPENAI_API_KEY"] = key
+    # Always ask the visitor for their own key. The key is passed explicitly into
+    # each request (never written to os.environ), so the app never uses an ambient
+    # server key and one visitor's key can't leak into another's session.
+    user_key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
+    st.caption(
+        "Bring your own key — used only for your session, never stored or logged. "
+        "Runs on `gpt-4o-mini` (a few cents). [Get a key ↗](https://platform.openai.com/api-keys)"
+    )
 
     model = st.selectbox("Model", list(MODEL_PRICING.keys()), index=0)
     st.caption(f"Default: {DEFAULT_MODEL} — chosen for low latency & cost.")
@@ -67,7 +64,7 @@ st.caption("Ask about insurance, maintenance, recalls, or repair costs for your 
 if "turns" not in st.session_state:
     st.session_state.turns = []
 
-if not os.getenv("OPENAI_API_KEY"):
+if not user_key:
     st.info(
         "👈 **Live demo — bring your own OpenAI key.** Paste a key in the sidebar to start "
         "chatting. It's used only for your session and never stored. Here's what it does:"
@@ -140,7 +137,7 @@ if prompt:
     with st.chat_message("assistant"):
         with st.spinner("Routing to a specialist..."):
             try:
-                result = run_turn(_to_lc(st.session_state.turns), model=model)
+                result = run_turn(_to_lc(st.session_state.turns), model=model, api_key=user_key)
             except Exception as exc:
                 result = {
                     "answer": f"⚠️ Something went wrong: {exc}",

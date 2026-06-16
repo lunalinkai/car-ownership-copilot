@@ -55,15 +55,23 @@ def _model_of(state: CopilotState) -> str:
     return state.get("model") or DEFAULT_MODEL
 
 
+def _key_of(state: CopilotState) -> Optional[str]:
+    return state.get("api_key") or None
+
+
 def _router_node(state: CopilotState) -> dict:
-    llm = get_llm(model=_model_of(state), temperature=0).with_structured_output(Route)
+    llm = get_llm(
+        model=_model_of(state), temperature=0, api_key=_key_of(state)
+    ).with_structured_output(Route)
     decision = llm.invoke([SystemMessage(content=ROUTER_SYSTEM)] + list(state["messages"]))
     return {"route": decision.destination}
 
 
 def _make_specialist_node(name: str):
     def node(state: CopilotState) -> dict:
-        answer = run_specialist(name, state["messages"], model=_model_of(state))
+        answer = run_specialist(
+            name, state["messages"], model=_model_of(state), api_key=_key_of(state)
+        )
         return {"messages": [answer]}
 
     return node
@@ -121,13 +129,17 @@ class _UsageTracker(BaseCallbackHandler):
             pass
 
 
-def run_turn(history: list, model: Optional[str] = None) -> dict:
-    """Run one conversational turn through the graph and return the answer + metrics."""
+def run_turn(history: list, model: Optional[str] = None, api_key: Optional[str] = None) -> dict:
+    """Run one conversational turn through the graph and return the answer + metrics.
+
+    ``api_key``, when provided, is used for every LLM call in the turn instead of
+    any ambient OPENAI_API_KEY. The web app passes the visitor's key here.
+    """
     model = model or DEFAULT_MODEL
     tracker = _UsageTracker()
     start = time.perf_counter()
     result = get_graph().invoke(
-        {"messages": history, "route": "", "model": model},
+        {"messages": history, "route": "", "model": model, "api_key": api_key or ""},
         config={"callbacks": [tracker]},
     )
     latency_ms = (time.perf_counter() - start) * 1000
@@ -145,8 +157,8 @@ def run_turn(history: list, model: Optional[str] = None) -> dict:
     }
 
 
-def route_only(query: str, model: Optional[str] = None) -> str:
+def route_only(query: str, model: Optional[str] = None, api_key: Optional[str] = None) -> str:
     """Just the routing decision for a single query — used by the eval harness."""
-    llm = get_llm(model=model, temperature=0).with_structured_output(Route)
+    llm = get_llm(model=model, temperature=0, api_key=api_key).with_structured_output(Route)
     decision = llm.invoke([SystemMessage(content=ROUTER_SYSTEM), HumanMessage(content=query)])
     return decision.destination

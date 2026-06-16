@@ -16,3 +16,6 @@ class CopilotState(TypedDict):
     messages: Annotated[list, add_messages]
     route: str
     model: str
+    # Per-request key. Passed explicitly so a shared server process never
+    # uses an ambient key or leaks one visitor's key to another.
+    api_key: str
